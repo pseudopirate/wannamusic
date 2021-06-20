@@ -1,10 +1,15 @@
-FROM node:14.17
+FROM mhart/alpine-node:14
+
+WORKDIR /app
+COPY package.json package-lock.json .
+RUN  npm ci --prod
+
+FROM mhart/alpine-node:slim-14
 
 EXPOSE 3000
-RUN apt update -y && apt install ffmpeg -y
-WORKDIR /opt/app
-COPY package.json package-lock.json /opt/app
-RUN  npm ci
+RUN apk add --no-cache ffmpeg
+WORKDIR /app
+COPY --from=0 /app .
 COPY . .
-
-CMD npm start
+  
+CMD node src
