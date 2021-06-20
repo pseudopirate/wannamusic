@@ -10,7 +10,7 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 })
 
-async function transpile (url, chatId) {
+async function transpile (url, chatId, messageId) {
   const isValidUrl = ytdl.validateURL(url)
   if (!isValidUrl) {
     throw new Error('Invalid url')
@@ -40,7 +40,7 @@ async function transpile (url, chatId) {
     .on('end', function () {
       console.log('Processing finished !')
       const params = {
-        Key: `${chatId}/${title}.mp3`,
+        Key: `${chatId}/${messageId}/${title}.mp3`,
         Bucket: process.env.S3_BUCKET,
         Body: fs.createReadStream(filePath)
       }

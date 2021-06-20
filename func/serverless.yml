@@ -1,0 +1,15 @@
+service: wannamusic-bot
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: eu-west-1
+functions:
+  wannamusic-bot:
+    handler: ./func/webhook.handler
+    environment:
+      TELEGRAM_TOKEN: '1788818215:AAGvGpZUl3MSKJyyqf491YIsY2XCIXtRGMQ'
+    events:
+      - http:
+          path: wannamusic-bot
+          method: post
+          cors: true
