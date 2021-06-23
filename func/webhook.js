@@ -1,34 +1,37 @@
-const Telegraf = require('telegraf')
+const { Telegraf } = require('telegraf')
 const _ = require('lodash')
 const ytdl = require('ytdl-core')
 
-const TOKEN = process.env.TELEGRAM_TOKEN
+const bot = new Telegraf(process.env.TELEGRAM_TOKEN)
 
-const tg = new Telegraf(TOKEN)
+bot.start((ctx) => {
+  return ctx.reply('Hi! Send me a video link')
+})
 
-exports.handler = async (event, context) => {
+bot.on('text', (ctx) => {
+  const text = _.get(ctx, ['update', 'message', 'text'])
+
+  if (text === '/ping') {
+    return ctx.reply('pong')
+  }
+  const chatId = _.get(ctx, ['update', 'message', 'chat', 'id'])
+  const messageId = _.get(ctx, ['update', 'message', 'chat', 'id'])
+
+  if (ytdl.validateURL(text)) {
+    return ctx.reply("Got it! I'll reply you soon")
+  } else {
+    return ctx.reply('Invalid link')
+  }
+})
+
+exports.handler = async (event) => {
   const body = JSON.parse(event.body)
   const message = _.get(body, ['message'])
   if (!message) {
     return { statusCode: 400 }
   }
-  switch (message.text) {
-    case '/ping': {
-      await tg.sendMessage(message.chat.id, 'pong')
-      break
-    }
-    case '/start': {
-      await tg.sendMessage(message.chat.id, 'Hi! Send me video link')
-      break
-    }
-    default: {
-      if (ytdl.validateURL(message.text)) {
-        await tg.sendMessage(message.chat.id, "Got it! I'll reply you soon")
-      } else {
-        await tg.sendMessage(message.chat.id, 'Invalid link')
-      }
-    }
-  }
 
-  return { statusCode: 200 }
+  await bot.handleUpdate(body)
+
+  return { statusCode: 200, body: '' }
 }

@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk')
-const Telegraf = require('telegraf')
+const Telegraf = require('telegraf').Telegraf
 
 const TOKEN = process.env.TELEGRAM_TOKEN
 const FIFTY_MB = 50 << 20
