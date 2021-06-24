@@ -12,12 +12,12 @@ bot.start((ctx) => {
 
 bot.on('text', async (ctx) => {
   const text = _.get(ctx, ['update', 'message', 'text'])
-
+  console.log(ctx.update)
   if (text === '/ping') {
     return ctx.reply('pong')
   }
   const chatId = _.get(ctx, ['update', 'message', 'chat', 'id'])
-  const messageId = _.get(ctx, ['update', 'message', 'chat', 'id'])
+  const messageId = _.get(ctx, ['update', 'message', 'message_id'])
 
   if (ytdl.validateURL(text)) {
     const params = {

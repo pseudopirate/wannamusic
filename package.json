@@ -19,6 +19,7 @@
     "express": "^4.17.1",
     "fluent-ffmpeg": "^2.1.2",
     "lodash": "^4.17.21",
+    "sqs-consumer": "^5.5.0",
     "ytdl-core": "^4.8.2"
   },
   "devDependencies": {

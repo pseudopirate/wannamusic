@@ -1,43 +1,47 @@
 const express = require('express')
-const app = express()
-const port = 3000
 const transpile = require('./transpile')
+const { Consumer } = require('sqs-consumer')
+const server = express()
+const port = 3000
 
-app.use(express.json())
-
-app.post('/', async (req, res) => {
-  const body = req.body
-  const errors = []
-  if (!body || !body.chatId) {
-    errors.push('Missing chatId')
-  }
-  if (!body || !body.urls) {
-    errors.push('Missing urls')
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).send({
-      status: 400,
-      message: errors.join(',')
-    })
-  }
-
-  try {
-    await transpile(body.urls, body.chatId)
-  } catch (error) {
-    return res.send({
-      status: 500,
-      message: 'not ok',
-      error
-    })
-  }
-  return res.status(200).send({
-    status: 200,
-    message: 'ok'
-  })
+server.get('/ping', (req, res) => {
+  res.status(200).send('pong')
 })
 
-function launchServer () {
+const consumer = Consumer.create({
+  queueUrl: process.env.QUEUE_URL,
+  handleMessage: async ({ Body }) => {
+    console.log('🚀 ~ file: index.js ~ line 14 ~ handleMessage: ~ Body', Body)
+    const { chatId, url, messageId } = JSON.parse(Body)
+    const errors = []
+    if (!chatId) {
+      errors.push('Missing chatId')
+    }
+    if (!url) {
+      errors.push('Missing url')
+    }
+    if (!messageId) {
+      errors.push('Missing messageId')
+    }
+
+    if (errors.length > 0) {
+      throw new Error(errors.join(','))
+    }
+
+    console.log('Got message!')
+    await transpile(url, chatId, messageId)
+  }
+})
+
+consumer.on('error', (err) => {
+  console.error('Consumer error', err)
+})
+
+consumer.on('processing_error', (err) => {
+  console.error('Consumer processing error', err)
+})
+
+function launch () {
   if (!process.env.AWS_ACCESS_KEY_ID) {
     throw new Error('Missing AWS_ACCESS_KEY_ID')
   }
@@ -47,9 +51,14 @@ function launchServer () {
   if (!process.env.S3_BUCKET) {
     throw new Error('Missing S3_BUCKET')
   }
-  app.listen(port, () => {
+  if (!process.env.QUEUE_URL) {
+    throw new Error('Missing QUEUE_URL')
+  }
+
+  consumer.start()
+  server.listen(port, () => {
     console.log(`Listening at ${port}`)
   })
 }
 
-launchServer()
+launch()
