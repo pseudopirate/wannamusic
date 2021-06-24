@@ -1,14 +1,16 @@
 const { Telegraf } = require('telegraf')
 const _ = require('lodash')
 const ytdl = require('ytdl-core')
+const AWS = require('aws-sdk')
 
+const SQS = new AWS.SQS({ apiVersion: '2012-11-05' })
 const bot = new Telegraf(process.env.TELEGRAM_TOKEN)
 
 bot.start((ctx) => {
   return ctx.reply('Hi! Send me a video link')
 })
 
-bot.on('text', (ctx) => {
+bot.on('text', async (ctx) => {
   const text = _.get(ctx, ['update', 'message', 'text'])
 
   if (text === '/ping') {
@@ -18,6 +20,32 @@ bot.on('text', (ctx) => {
   const messageId = _.get(ctx, ['update', 'message', 'chat', 'id'])
 
   if (ytdl.validateURL(text)) {
+    const params = {
+      MessageBody: JSON.stringify({ chatId, messageId, url: text }),
+      QueueUrl: process.env.QUEUE_URL,
+      MessageAttributes: {
+        chatId: {
+          DataType: 'Number',
+          StringValue: String(chatId)
+        },
+        messageId: {
+          DataType: 'Number',
+          StringValue: String(messageId)
+        },
+        url: {
+          DataType: 'String',
+          StringValue: text
+        }
+      }
+    }
+
+    try {
+      await SQS.sendMessage(params).promise()
+    } catch (error) {
+      console.error(error)
+      return ctx.reply('Please try again')
+    }
+
     return ctx.reply("Got it! I'll reply you soon")
   } else {
     return ctx.reply('Invalid link')

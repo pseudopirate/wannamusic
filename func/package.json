@@ -13,6 +13,7 @@
     "url": "git@github.com:pseudopirate/wannamusic.git"
   },
   "dependencies": {
+    "aws-sdk": "^2.933.0",
     "lodash": "^4.17.21",
     "serverless": "^2.47.0",
     "telegraf": "^4.3.0",
