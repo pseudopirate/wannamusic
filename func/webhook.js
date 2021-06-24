@@ -12,7 +12,7 @@ bot.start((ctx) => {
 
 bot.on('text', async (ctx) => {
   const text = _.get(ctx, ['update', 'message', 'text'])
-  console.log(ctx.update)
+
   if (text === '/ping') {
     return ctx.reply('pong')
   }
