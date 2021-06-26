@@ -42,7 +42,7 @@ async function transpile (url, chatId, messageId) {
       .on('end', function () {
         console.log('Processing finished !')
         const params = {
-          Key: `${chatId}/${messageId}/${title}.mp3`,
+          Key: `${chatId}/${messageId}/audio${Date.now()}.mp3`,
           Bucket: process.env.S3_BUCKET,
           Body: fs.createReadStream(filePath)
         }

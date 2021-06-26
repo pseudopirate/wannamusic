@@ -22,6 +22,6 @@ functions:
       S3_BUCKET: ${env:S3_BUCKET}
     events:
       - s3:
-        bucket: ${env:S3_BUCKET}
-        event: s3:ObjectCreated:*
-        existing: true
+          bucket: ${env:S3_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true
