@@ -2,75 +2,72 @@ const fs = require('fs')
 const ytdl = require('ytdl-core')
 const path = require('path')
 const ffmpeg = require('fluent-ffmpeg')
-const AWS = require('aws-sdk')
 const _ = require('lodash')
+const utils = require('util')
+const { progressStatusMap, sendAudio, sendMessage, sendLogMessage } = require('./bot')
 
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-})
+const unlink = utils.promisify(fs.unlink)
+const errors = new Map()
 
 async function transpile (url, chatId, messageId) {
-  const isValidUrl = ytdl.validateURL(url)
-  if (!isValidUrl) {
-    throw new Error('Invalid url')
-  }
-  const info = await ytdl.getInfo(url)
-  const title = _.get(info, ['videoDetails', 'title']) || ytdl.getURLVideoID(url)
+    let messageSent = false
+    const isValidUrl = ytdl.validateURL(url)
+    if (!isValidUrl) {
+        throw new Error('Invalid url')
+    }
+    const info = await ytdl.getInfo(url)
+    const title = _.get(info, ['videoDetails', 'title']) || ytdl.getURLVideoID(url)
 
-  const filePath = path.resolve(__dirname, '../tmp', `${title}.mp3`)
-  return new Promise((resolve, reject) => {
-    console.log('Processing started', title)
-    console.time('l')
-
-    const yVideo = ytdl(url)
-
-    ffmpeg(yVideo)
-      .format('mp3')
-      .noVideo()
-      .on('start', function (commandLine) {
-        console.log('Spawned Ffmpeg with command: ' + commandLine)
-      })
-      .on('progress', function (progress) {
-        const val = progress.timemark
-        console.log('Timemark: ' + val)
-      })
-      .on('error', function (err) {
-        console.log('An error occurred: ' + err.message)
-        reject(err)
-      })
-      .on('end', function () {
-        console.log('Processing finished !')
-        const params = {
-          Key: `${chatId}/${messageId}/audio${Date.now()}.mp3`,
-          Bucket: process.env.S3_BUCKET,
-          Body: fs.createReadStream(filePath)
+    const filePath = path.resolve(__dirname, '../tmp', `${title}.mp3`)
+    return new Promise((resolve, reject) => {
+        const errorsCount = errors.get(title) || 0
+        if (errorsCount > 2) {
+            sendLogMessage(`Failed to transpile ${title}`)
+            sendMessage("Can't process this video. I've sent notification to developers", chatId)
+            return resolve()
         }
-        console.log('Uploading file to S3')
+        console.log('Processing started', title)
 
-        s3.upload(params, function (err, data) {
-          if (err) {
-            console.log('Upload failed', err)
-            reject(err)
-          } else {
-            console.log('Upload finished', data)
-          }
-          console.timeEnd('l')
-          console.log('Removing file')
+        const yVideo = ytdl(url)
 
-          fs.unlink(filePath, (err) => {
-            if (err) {
-              console.log('Removing failed', err)
-              reject(err)
-            } else {
-              console.log('File removed')
-              resolve()
-            }
-          })
-        })
-      })
-      .pipe(fs.createWriteStream(filePath), { end: true })
-  })
+        ffmpeg(yVideo)
+            .format('mp3')
+            .noVideo()
+            .on('start', function (commandLine) {
+                console.log('Spawned Ffmpeg with command: ' + commandLine)
+            })
+            .on('progress', function (progress) {
+                const val = progress.timemark
+                if (!messageSent) {
+                    messageSent = true
+                    sendMessage(`Starting to process ${title}. You can send me /status to check processing status`, chatId)
+                }
+                progressStatusMap.set(chatId, `Processed ${val}`)
+                console.log('Timemark: ' + val)
+            })
+            .on('error', function (err) {
+                errors.set(title, errorsCount + 1)
+                console.log('An error occurred: ' + err.message)
+                reject(new Error(title + ' Error: ' + err.message))
+            })
+            .on('end', async function () {
+                console.log('Processing finished !')
+                progressStatusMap.set(chatId, 'Sending processed file...')
+                try {
+                    await sendAudio(filePath, chatId, messageId)
+                    resolve()
+                } catch (error) {
+                    reject(error)
+                } finally {
+                    await unlink(filePath)
+                    console.log('File removed')
+                    progressStatusMap.delete(chatId)
+                }
+            })
+            .pipe(fs.createWriteStream(filePath), { end: true })
+    })
 }
 
-module.exports = transpile
+module.exports = {
+    transpile
+}
