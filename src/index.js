@@ -14,7 +14,7 @@ const throttleSend = _.throttle(sendLogMessage, 10000)
 async function launch () {
     [
         'AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'TELEGRAM_TOKEN', 'ADMIN_CHAT_ID', 'QUEUE_URL',
-        'DROPBOX_TOKEN'
+        'DROPBOX_TOKEN', 'BOT_SERVER_URL'
     ].forEach(validateEnv)
 
     await startBot()
@@ -49,7 +49,7 @@ async function launch () {
     })
 
     consumer.on('processing_error', (err) => {
-        throttleSend(err)
+        throttleSend(err.message)
     })
     consumer.start()
 }

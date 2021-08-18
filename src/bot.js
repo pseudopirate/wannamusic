@@ -4,7 +4,11 @@ const ytdl = require('ytdl-core')
 const { onUrl } = require('./commands')
 
 const progressStatusMap = new Map()
-const bot = new Telegraf(process.env.TELEGRAM_TOKEN)
+const bot = new Telegraf(process.env.TELEGRAM_TOKEN, {
+    telegram: {
+        apiRoot: process.env.BOT_SERVER_URL
+    }
+})
 
 bot.start((ctx) => {
     return ctx.reply('Hi! Send me a video link')
@@ -18,7 +22,7 @@ bot.on('text', async (ctx) => {
     } else if (text === '/status') {
         const chatId = _.get(ctx, ['update', 'message', 'chat', 'id'])
         const status = progressStatusMap.get(chatId)
-        const msg = status ? `Processed ${status}` : 'Nothing to process or waiting in queue'
+        const msg = status || 'Nothing to process or waiting in queue'
         return ctx.reply(msg)
     }
 

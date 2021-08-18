@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "aws-sdk": "^2.931.0",
-    "dropbox": "^10.6.0",
     "fluent-ffmpeg": "^2.1.2",
     "lodash": "^4.17.21",
     "sqs-consumer": "^5.5.0",
