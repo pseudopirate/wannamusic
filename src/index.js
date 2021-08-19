@@ -10,7 +10,7 @@ function validateEnv (key) {
 }
 
 const throttleSend = _.throttle(sendLogMessage, 10000)
-
+const TWENTY_MINUTES = 1000 * 60 * 20
 async function launch () {
     [
         'AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'TELEGRAM_TOKEN', 'ADMIN_CHAT_ID', 'QUEUE_URL',
@@ -22,6 +22,7 @@ async function launch () {
     const consumer = Consumer.create({
         region: process.env.AWS_REGION,
         queueUrl: process.env.QUEUE_URL,
+        handleMessageTimeout: TWENTY_MINUTES,
         handleMessage: async ({ Body }) => {
             const { chatId, url, messageId } = JSON.parse(Body)
             const errors = []

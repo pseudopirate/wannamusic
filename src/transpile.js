@@ -9,6 +9,12 @@ const { progressStatusMap, sendAudio, sendMessage, sendLogMessage } = require('.
 const unlink = utils.promisify(fs.unlink)
 const errors = new Map()
 
+const sleep = async (ms) => new Promise((resolve) => {
+    setTimeout(resolve, ms)
+})
+
+const TWO_MINUTES = 1000 * 60 * 2
+
 async function transpile (url, chatId, messageId) {
     let messageSent = false
     const isValidUrl = ytdl.validateURL(url)
@@ -54,9 +60,16 @@ async function transpile (url, chatId, messageId) {
                 console.log('Processing finished !')
                 progressStatusMap.set(chatId, 'Sending processed file...')
                 try {
-                    await sendAudio(filePath, chatId, messageId)
+                    await Promise.race([
+                        sendAudio(filePath, chatId, messageId),
+                        sleep(TWO_MINUTES).then(() => {
+                            throw new Error(`Send file timeout: ${title}`)
+                        })
+                    ])
+                    console.log('File sent')
                     resolve()
                 } catch (error) {
+                    errors.set(title, errorsCount + 1)
                     reject(error)
                 } finally {
                     await unlink(filePath)
