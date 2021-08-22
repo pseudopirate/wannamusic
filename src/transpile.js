@@ -12,6 +12,10 @@ const errors = new Map()
 const sleep = async (ms) => new Promise((resolve) => {
     setTimeout(resolve, ms)
 })
+const opts = {
+    filter: 'audioonly',
+    quality: 'highestaudio'
+}
 
 const TWO_MINUTES = 1000 * 60 * 2
 
@@ -34,7 +38,7 @@ async function transpile (url, chatId, messageId) {
         }
         console.log('Processing started', title)
 
-        const yVideo = ytdl(url)
+        const yVideo = ytdl(url, opts)
 
         ffmpeg(yVideo)
             .format('mp3')
