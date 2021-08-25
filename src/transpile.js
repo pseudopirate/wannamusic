@@ -50,7 +50,7 @@ async function transpile (url, chatId, messageId) {
                 const val = progress.timemark
                 if (!messageSent) {
                     messageSent = true
-                    sendMessage(`Starting to process ${title}. You can send me /status to check processing status`, chatId)
+                    sendMessage(`Starting to process "${title}". You can send me /status to check processing status`, chatId)
                 }
                 progressStatusMap.set(chatId, `Processed ${val}`)
                 console.log('Timemark: ' + val)
@@ -65,7 +65,7 @@ async function transpile (url, chatId, messageId) {
                 progressStatusMap.set(chatId, 'Sending processed file...')
                 try {
                     await Promise.race([
-                        sendAudio(filePath, chatId, messageId),
+                        sendAudio(filePath, chatId),
                         sleep(TWO_MINUTES).then(() => {
                             throw new Error(`Send file timeout: ${title}`)
                         })
