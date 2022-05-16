@@ -1,14 +1,9 @@
 FROM mhart/alpine-node:14
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN  npm ci --prod
+COPY tsconfig.json package.json package-lock.json ./
+RUN  npm ci
+COPY src ./src
+RUN npm run build && npm prune --production
 
-FROM mhart/alpine-node:slim-14
-
-RUN apk add --no-cache ffmpeg
-WORKDIR /app
-COPY --from=0 /app .
-COPY . .
-
-CMD node src
+CMD npm start
