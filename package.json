@@ -24,7 +24,7 @@
     "lodash": "^4.17.21",
     "sqs-consumer": "^5.5.0",
     "telegraf": "^4.4.1",
-    "ytdl-core": "^4.9.1"
+    "ytdl-core": "^4.11.0"
   },
   "devDependencies": {
     "@types/aws-sdk": "^2.7.0",
